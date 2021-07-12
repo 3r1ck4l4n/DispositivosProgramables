@@ -1,0 +1,149 @@
+   ;EXAMEN
+    ; LUNA GARCIA ERICK ALAN
+    ;2019600641
+    
+    
+    
+    
+    LIST P=18F4550
+    #INCLUDE<P18F4550.INC>
+    
+    
+    
+    #DEFINE CERO     B'11000000'
+    #DEFINE UNO      B'11110101'
+    #DEFINE DOS	     B'10100010'
+    #DEFINE TRES     B'10100100'
+    #DEFINE CUATRO   B'10010101'
+    #DEFINE CINCO    B'10001100'
+    #DEFINE SEIS     B'10001000'
+    #DEFINE SIETE    B'11100101'
+    #DEFINE OCHO     B'10000000'
+    #DEFINE NUEVE    B'10000101'
+    #DEFINE DIEZ     B'00000001'
+    #DEFINE BUTTONOUT PORTE,RE0,0
+    #DEFINE BUTTONINT PORTE,RE1,0
+    #DEFINE LEDV PORTC,RC0,0
+    #DEFINE LEDR PORTC,RC1,0
+    CBLOCK 0X00
+    MINIMO
+    NUMERO
+    MAXIMO
+    ENDC
+    ORG .0
+    GOTO    INICIO
+    
+    
+   
+SALIDA
+    ADDWF   PCL,1,0
+    DT CERO, UNO, DOS, TRES, CUATRO, CINCO, SEIS, SIETE, OCHO, NUEVE, DIEZ
+   
+DELAY_10ms
+    CLRF    TMR0L,0
+    MOVLW   .39
+ASK
+    CPFSEQ  TMR0L,0
+    GOTO    ASK
+    RETURN
+
+INICIO
+    ;--------------PORTA
+    SETF    TRISB,0
+    CLRF    PORTB,0
+     ;--------------PORTC
+    CLRF    TRISC,0
+    CLRF    PORTC,0
+    MOVLW   H'07'
+     ;--------------PORTE
+    BSF	    TRISE,0,0
+    CLRF    PORTE,0
+    MOVLW   .15
+    MOVWF   ADCON1,0
+    MOVLW   .7
+    MOVWF   CMCON,0
+    CLRF    TRISD,0
+    CLRF    PORTD,0
+    
+    ;-------------TIME
+    MOVLW   B'01100000'    
+    MOVWF   OSCCON,0
+    MOVLW   B'11010111'    
+    MOVWF   T0CON,0
+    
+    ;--------------CONSTANTES
+    MOVLW   H'00'
+    MOVFF   WREG,MINIMO
+    MOVLW   H'0A'
+    MOVFF   WREG,MAXIMO
+    MOVLW   H'0A'
+    MOVFF   WREG,NUMERO
+    MOVFF   NUMERO, WREG
+    MULLW   B'00000010'      
+    MOVFF   PRODL,WREG
+    CALL    SALIDA
+    MOVFF   WREG,PORTD
+
+MAIN
+    MOVLW   B'00000010'
+    CPFSEQ  PORTB
+    GOTO    APAGAR
+    GOTO    INC
+    
+INC BTFSC   BUTTONOUT  
+    GOTO    DEC
+    GOTO    INCREMENTO
+   
+DEC BTFSC   BUTTONINT    
+    GOTO    MAIN
+    GOTO    DECREMENTO
+   
+INCREMENTO
+N1  CALL    DELAY_10ms
+    BTFSS   BUTTONOUT    
+    GOTO    N1
+   
+    MOVFF   NUMERO, WREG
+    CPFSEQ  MAXIMO
+    INCF    NUMERO,1
+    GOTO    DECODE
+
+DECREMENTO
+N2  CALL    DELAY_10ms
+    BTFSS   BUTTONINT    
+    GOTO    N2
+   
+    MOVFF   NUMERO, WREG
+    CPFSEQ  MINIMO
+    DECF    NUMERO,1
+    GOTO    DECODE
+   
+DECODE
+    MOVFF   NUMERO, WREG
+    MULLW   B'00000010'      
+    MOVFF   PRODL,WREG
+    CALL    SALIDA 
+    MOVFF   WREG,PORTD
+    GOTO FLAGS
+    
+FLAGS
+    MOVFF   NUMERO, WREG
+    CPFSEQ  MINIMO
+    GOTO LUGARES
+    GOTO NO_LUGARES
+    
+LUGARES
+    BSF	    LEDV
+    BCF	    LEDR
+    GOTO    MAIN
+    
+NO_LUGARES
+    BSF	    LEDR
+    BCF	    LEDV
+    GOTO    MAIN
+    
+APAGAR
+    CLRF PORTB,0
+    CLRF PORTD,0
+    END
+    
